@@ -4,7 +4,13 @@ import sys,os
 import json
 import datetime
 import argparse
-
+sys.path.append("/Users/feeley19/coding/projects/googlemaps/directionsDatabase")
+from pprint import pprint
+os.environ["DJANGO_SETTINGS_MODULE"] = "directionsDatabase.settings"
+# from django.contrib.auth.models import *
+from directions.models import Area,LocationInArea,Location,Area,Departure,Path
+import django 
+django.setup()
 
 def getNextDateTime(now,day,hour):
     days={"monday":0,"tuesday":1,"wednesday":2,"thursday":3,"friday":4,"saturday":5,"sunday":6}
@@ -39,48 +45,52 @@ def loadFromJson(path):
 
 
 def loadArea(name):
-    return loadFromJson("./locations/areas/%s.json"%(name))
+    area=Area.objects.filter(name=name)[0]
+    return area
 
-def loadPlace(name):
-    return loadFromJson("./locations/places/%s.json"%(name))
+def loadPlace(name): 
+    location=Location.objects.filter(name=name)[0]
+    return location
+
+def savePath():
+    pass
 
 
-def secondsToGetTo(home,dest):
+def secondsToGetTo(home,dest,unix_time):
 
     time.sleep(2)
     seconds=-1
     url="https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&key=AIzaSyCewGtfayH4MKxjtHpqJjpol8Q2dcKCDW8&&departure_time=%d&mode=transit"
-    url= url%(home[0],home[1],dest[0],dest[1],time.time())
+    url= url%(home.latitude,home.longitude,dest[0],dest[1],unix_time)
     # print url
     resp = requests.get(url=url)
     data = json.loads(resp.text)
     routes=data['routes']
     seconds=data['routes'][0]['legs'][0]['duration']['value']
- 
-    
-    return seconds
+    departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
+    delay=departure_time - unix_time
+    return seconds + delay
 
 
 
-def getGrid(area, place,gridDensity):
+def getGrid(area, place,gridDensity,unix_time):
 
     place=loadPlace(place)
     area=loadArea(area)
 
-    topLeft=area[0]
-    bottomRight=area[1]
+   
 
     # radius=0.2
-    width=topLeft[0]-bottomRight[0]
-    height=bottomRight[1]-topLeft[1]
+    width=area.topLeftLat-area.bottomRightLat
+    height=area.bottomRightLong-area.topLeftLong
     grid=[]
 
     for y in range(0,gridDensity):
         grid.append([])
         for x in range(0,gridDensity):
             printLoadingBar(float((y*gridDensity)+x)/float(gridDensity*gridDensity))
-            loc=[topLeft[0]-y*(height/(gridDensity-1)),topLeft[1]+x*(width/(gridDensity-1))]
-            seconds=secondsToGetTo(place,loc)
+            loc=[area.topLeftLat-y*(height/(gridDensity-1)),area.topLeftLong+x*(width/(gridDensity-1))]
+            seconds=secondsToGetTo(place,loc,unix_time)
             grid[y].append({'loc':loc,'seconds':seconds})
 
     return grid
@@ -95,12 +105,18 @@ def getGridAtTime(frm, to,day,hour,density):
     now = datetime.datetime.now()
     then = getNextDateTime(now,day,hour)
     unix_time = unixTime(then)
-    return getGrid(to, frm,density)
+    return getGrid(to, frm,density,unix_time)
 
 def printGrid(grid):
     for row in grid:
         for item in row:
-            print item['seconds']/60,
+
+            mins=item['seconds']/60
+            if mins>60:
+                hours=mins/60.0
+                print "%.2f hours"%hours,
+            else:
+                print mins,"mins ",
         print 
 
     print
@@ -124,6 +140,7 @@ if __name__ == '__main__':
     print "from %s to %s"%(args.frm, args.to)
     print "at %d:00 this %s"%(args.hour, args.day)
     print "rendering a %dx%d grid"%(args.density, args.density)
+   
     grid=getGridAtTime(args.frm, args.to,args.day,args.hour,args.density)
     printGrid(grid)
 
