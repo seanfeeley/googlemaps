@@ -10,6 +10,9 @@ class Area(models.Model):
     topLeftLong = models.FloatField(default=0)
     bottomRightLat = models.FloatField(default=0)
     bottomRightLong = models.FloatField(default=0)
+    def getCenter(self):
+        return ((self.topLeftLat-self.bottomRightLat)/2+self.bottomRightLat,(self.topLeftLong-self.bottomRightLong)/2+self.bottomRightLong)
+
     def __unicode__(self):              
         return self.name
 
@@ -23,6 +26,7 @@ class LocationInArea(models.Model):
         lon=abs(self.area.bottomRightLong-self.area.topLeftLong)
         percentLat=(float(abs(self.area.topLeftLat - self.latitude))/lat)*100
         percentLon=(float(abs(self.longitude-self.area.topLeftLong))/lon)*100
+        
         return "%s, %d%% latitude, %d%% longitude"%(self.area.name, percentLat,percentLon)
 
 class Location(models.Model):
@@ -47,6 +51,8 @@ class PathGrid(models.Model):
 
     fromLocationToArea = models.BooleanField(default=True)
     mode = models.CharField(max_length=200)
+
+    density = models.IntegerField(default=0)
     
     def __unicode__(self):
         if self.fromLocationToArea:

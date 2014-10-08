@@ -59,6 +59,14 @@ def loadArea(name):
     area=Area.objects.filter(name=name)[0]
     return area
 
+def loadPath(pathGrid,locationInArea):
+    paths=Path.objects.filter(pathGrid=pathGrid,locationInArea=locationInArea)
+    if len(paths)==1:
+        return paths[0]
+    else:
+        return None
+
+
 
 
 def loadPlace(name): 
@@ -90,12 +98,12 @@ def makePath(pathGrid,locationInArea,seconds,delay):
         return path
 
 
-def makePathGrid(location,area,fromLocationToArea,departure,mode):
-    pathGrids=PathGrid.objects.filter(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode)
+def makePathGrid(location,area,fromLocationToArea,departure,mode,density):
+    pathGrids=PathGrid.objects.filter(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode,density=density)
     if len(pathGrids)==1:
         return pathGrids[0]
     elif len(pathGrids)==0:
-        pathGrid= PathGrid(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode)
+        pathGrid= PathGrid(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode,density=density)
         pathGrid.save()
         return pathGrid
 
@@ -121,14 +129,19 @@ def secondsToGetTo(pathGrid,loc):
     # print url
     resp = requests.get(url=url)
     data = json.loads(resp.text)
-    routes=data['routes']
-    seconds=data['routes'][0]['legs'][0]['duration']['value']
-    departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
-    delay=departure_time - unix_time
-    
-    
 
-    return seconds,delay
+    routes=data['routes']
+    try:
+        seconds=data['routes'][0]['legs'][0]['duration']['value']
+        departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
+        delay=departure_time - unix_time
+        return seconds,delay
+    except Exception, e:
+        if data.get('status') and data.get('status')=='OVER_QUERY_LIMIT':
+            print data.get('error_message')
+            sys.exit()
+
+        return -1,0
 
 
 
@@ -137,7 +150,7 @@ def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
     place=loadPlace(place)
     area=loadArea(area)
 
-    pathGrid=makePathGrid(place,area,fromLocationToArea,depart,mode)
+    pathGrid=makePathGrid(place,area,fromLocationToArea,depart,mode,gridDensity)
    
 
     # radius=0.2
@@ -152,9 +165,12 @@ def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
             loc=[area.topLeftLat-y*(height/(gridDensity-1)),area.topLeftLong+x*(width/(gridDensity-1))]
             loc=makeLocationInArea(loc,area)
             
-            seconds,delay=secondsToGetTo(pathGrid,loc)
-            makePath(pathGrid,loc,seconds,delay)
-            
+            if not loadPath(pathGrid,loc):
+                seconds,delay=secondsToGetTo(pathGrid,loc)
+                makePath(pathGrid,loc,seconds,delay)
+            else:
+                seconds = -1
+                delay=0
             grid[y].append({'loc':loc,'seconds':seconds+delay})
             eta=time.time()-time_marker
             eta=eta*((gridDensity*gridDensity)-(1+(y*gridDensity)+x))
