@@ -68,7 +68,7 @@ class Path(models.Model):
 
     locationInArea = models.ForeignKey(LocationInArea)
 
-
+    valid=models.BooleanField(default=True)
    
     seconds = models.IntegerField(default=0)
     delay = models.IntegerField(default=0)

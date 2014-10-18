@@ -25,11 +25,15 @@ def map(request):
     
     area=Area.objects.filter(name="london")[0]
     lat,lon=area.getCenter()
-    grid=PathGrid.objects.filter()[4]
+
+    grid=PathGrid.objects.filter()[len(PathGrid.objects.filter())-1]
     print grid
     
     points=Path.objects.filter(pathGrid=grid)
-    print len(points)
-    context = {'latitude': str(lat),'longitude':str(lon),'points':points}
+    validPoints=[]
+    for point in points:
+        if point.valid:
+            validPoints.append(point)
+    context = {'latitude': str(lat),'longitude':str(lon),'points':validPoints}
 
     return render(request, 'maps/map.html',context)

@@ -15,6 +15,8 @@ import django
 
 django.setup()
 
+TEN_MINS_WALKING=-51.602626-51.595441
+
 def getNextDateTime(now,day,hour):
     days={"monday":0,"tuesday":1,"wednesday":2,"thursday":3,"friday":4,"saturday":5,"sunday":6}
     time = datetime.time(hour=hour)
@@ -39,7 +41,7 @@ def printLoadingBar(percentage,eta):
             print 'I',
         else:
             print '-',
-    print "]",eta
+    print "]",eta,
 
 def loadFromJson(path):
     json_data=open(path)
@@ -61,7 +63,7 @@ def loadArea(name):
 
 def loadPath(pathGrid,locationInArea):
     paths=Path.objects.filter(pathGrid=pathGrid,locationInArea=locationInArea)
-    if len(paths)==1:
+    if len(paths)==1 and paths[0].seconds!=-1:
         return paths[0]
     else:
         return None
@@ -75,13 +77,17 @@ def loadPlace(name):
 
 
 def makeDeparture(time):
-    departs=Departure.objects.filter(time=time)
-    if len(departs)==1:
-        return departs[0]
-    elif len(departs)==0:
-        depart= Departure(time=time)
-        depart.save()
-        return depart
+    departs=Departure.objects.filter()
+   
+    for departure in departs:
+        
+        if departure.time.weekday() == time.weekday() and departure.time.time() == time.time():
+            return departure
+
+    
+    depart= Departure(time=time)
+    depart.save()
+    return depart
 
 def makePath(pathGrid,locationInArea,seconds,delay):
     paths=Path.objects.filter(pathGrid=pathGrid,locationInArea=locationInArea)
@@ -114,7 +120,6 @@ def secondsToGetTo(pathGrid,loc):
     time.sleep(2)
     seconds=-1
 
-
     if pathGrid.fromLocationToArea:
         fromLoc=pathGrid.location
         destLoc=loc
@@ -126,12 +131,14 @@ def secondsToGetTo(pathGrid,loc):
     unix_time = unixTime(pathGrid.departure.time)
     url="https://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&key=AIzaSyCewGtfayH4MKxjtHpqJjpol8Q2dcKCDW8&&departure_time=%d&mode=%s"
     url= url%(fromLoc.latitude,fromLoc.longitude,destLoc.latitude,destLoc.longitude,unix_time,pathGrid.mode)
-    # print url
+    
     resp = requests.get(url=url)
     data = json.loads(resp.text)
 
     routes=data['routes']
+    
     try:
+
         seconds=data['routes'][0]['legs'][0]['duration']['value']
         departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
         delay=departure_time - unix_time
@@ -157,21 +164,11 @@ def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
     height=area.topLeftLat-area.bottomRightLat
     width=area.bottomRightLong-area.topLeftLong
     grid=[]
-
+    time_marker=time.time()
     for y in range(0,gridDensity):
         grid.append([])
         for x in range(0,gridDensity):
-            time_marker=time.time()
-            loc=[area.topLeftLat-y*(height/(gridDensity-1)),area.topLeftLong+x*(width/(gridDensity-1))]
-            loc=makeLocationInArea(loc,area)
-            
-            if not loadPath(pathGrid,loc):
-                seconds,delay=secondsToGetTo(pathGrid,loc)
-                makePath(pathGrid,loc,seconds,delay)
-            else:
-                seconds = -1
-                delay=0
-            grid[y].append({'loc':loc,'seconds':seconds+delay})
+
             eta=time.time()-time_marker
             eta=eta*((gridDensity*gridDensity)-(1+(y*gridDensity)+x))
             if eta>120:
@@ -179,6 +176,22 @@ def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
             else:
                 eta="%d seconds to go"%(eta)
             printLoadingBar(float((y*gridDensity)+x)/float(gridDensity*gridDensity),eta)
+
+            time_marker=time.time()
+            loc=[area.topLeftLat-y*(height/(gridDensity-1)),area.topLeftLong+x*(width/(gridDensity-1))]
+            
+            if isPointInArea(area,loc[0],loc[1]):
+                loc=makeLocationInArea(loc,area)
+                if not loadPath(pathGrid,loc):
+                    seconds,delay=secondsToGetTo(pathGrid,loc)
+                    makePath(pathGrid,loc,seconds,delay)
+                else:
+                    seconds = -1
+                    delay=0
+                grid[y].append({'loc':loc,'seconds':seconds+delay})
+                print "."
+            else:
+                print "Not in the area."
 
 
     return grid
@@ -210,6 +223,21 @@ def printGrid(grid):
             print item['loc'].latitude,item['loc'].longitude,"    ",
         print 
 
+def getAddress(lat,lon):
+    url="http://maps.googleapis.com/maps/api/geocode/json?latlng=%f,%f&sensor=true"%(lat,lon)
+    
+    resp = requests.get(url=url)
+    data = json.loads(resp.text)
+    return data
+
+def isPointInArea(area,lat,lon):
+    data=getAddress(lat,lon)
+    try:
+        if area.name.lower() in data['results'][0]['formatted_address'].lower():
+            return True
+        return False
+    except:
+        return False
 
 
 if __name__ == '__main__':
