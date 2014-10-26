@@ -11,11 +11,18 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "directionsDatabase.settings"
 # from django.contrib.auth.models import *
 from directions.models import Area,LocationInArea,Location,Area,Departure,Path,PathGrid
 import django
+import math
 
 
 django.setup()
 
-TEN_MINS_WALKING=-51.602626-51.595441
+TEN_MINS_WALKING_Y=51.602626-51.595441
+TWENTY_MINS_WALKING_Y=TEN_MINS_WALKING_Y*2
+FIFTEEN_MINS_WALKING_Y=TEN_MINS_WALKING_Y*1.5
+
+TEN_MINS_WALKING_X=-0.076213+0.087382
+TWENTY_MINS_WALKING_X=TEN_MINS_WALKING_X*2
+FIFTEEN_MINS_WALKING_X=TEN_MINS_WALKING_X*1.5
 
 def getNextDateTime(now,day,hour):
     days={"monday":0,"tuesday":1,"wednesday":2,"thursday":3,"friday":4,"saturday":5,"sunday":6}
@@ -32,12 +39,18 @@ def getNextDateTime(now,day,hour):
 def unixTime(datetime):
     return int(time.mktime(datetime.timetuple()))
 
-def printLoadingBar(percentage,eta):
+def printLoadingBar(percentageX, percentageY,eta):
     max=50
     print "[",
 
-    for i in range(0,max):
-        if float(i)/max<percentage:
+    for i in range(0,(max*percentageX)):
+        if float(i)/max<percentageY:
+            print 'I',
+        else:
+            print '-',
+    print "O"
+    for i in range(0,(max*(1-percentageX))):
+        if float(i)/max<percentageY:
             print 'I',
         else:
             print '-',
@@ -104,12 +117,13 @@ def makePath(pathGrid,locationInArea,seconds,delay):
         return path
 
 
-def makePathGrid(location,area,fromLocationToArea,departure,mode,density):
-    pathGrids=PathGrid.objects.filter(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode,density=density)
+def makePathGrid(location,area,fromLocationToArea,departure,mode):
+    pathGrids=PathGrid.objects.filter(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode)
     if len(pathGrids)==1:
         return pathGrids[0]
     elif len(pathGrids)==0:
-        pathGrid= PathGrid(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode,density=density)
+
+        pathGrid= PathGrid(location=location,area=area,fromLocationToArea=fromLocationToArea,departure=departure,mode=mode)
         pathGrid.save()
         return pathGrid
 
@@ -152,33 +166,43 @@ def secondsToGetTo(pathGrid,loc):
 
 
 
-def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
+def getGrid(area, place,depart,mode,fromLocationToArea):
 
     place=loadPlace(place)
     area=loadArea(area)
 
-    pathGrid=makePathGrid(place,area,fromLocationToArea,depart,mode,gridDensity)
-   
+    pathGrid=makePathGrid(place,area,fromLocationToArea,depart,mode)
+  
 
     # radius=0.2
     height=area.topLeftLat-area.bottomRightLat
     width=area.bottomRightLong-area.topLeftLong
     grid=[]
     time_marker=time.time()
-    for y in range(0,gridDensity):
+
+    yGridDensity=int(math.fabs(height)/TEN_MINS_WALKING_Y)
+    xGridDensity=int(math.fabs(width)/TEN_MINS_WALKING_X)
+
+
+    for y in range(0,yGridDensity):
         grid.append([])
-        for x in range(0,gridDensity):
+        for x in range(0,xGridDensity):
 
             eta=time.time()-time_marker
-            eta=eta*((gridDensity*gridDensity)-(1+(y*gridDensity)+x))
-            if eta>120:
-                eta="%d mins to go"%(eta/60)
+            eta=eta*((xGridDensity*yGridDensity)-(1+(y*yGridDensity)+x))
+            if eta>(60*60):
+                mins=eta/60
+                hours=mins%60
+                remainingMins=mins-(60*hours)
+                etaString="%d hours, %d mins to go. "%(hours,remainingMins)
+            elif eta>(60):
+                etaString="%d mins to go. "%(eta/60)
             else:
-                eta="%d seconds to go"%(eta)
-            printLoadingBar(float((y*gridDensity)+x)/float(gridDensity*gridDensity),eta)
+                etaString="%d seconds to go. "%(eta)
+            printLoadingBar(float((y*yGridDensity)+x)/float(yGridDensity*xGridDensity),etaString)
 
             time_marker=time.time()
-            loc=[area.topLeftLat-y*(height/(gridDensity-1)),area.topLeftLong+x*(width/(gridDensity-1))]
+            loc=[area.topLeftLat-y*(height/(yGridDensity-1)),area.topLeftLong+x*(width/(xGridDensity-1))]
             
             if isPointInArea(area,loc[0],loc[1]):
                 loc=makeLocationInArea(loc,area)
@@ -199,11 +223,11 @@ def getGrid(area, place,gridDensity,depart,mode,fromLocationToArea):
     
 
 
-def getGridAtTime(loc, area,day,hour,density,mode,toArea):
+def getGridAtTime(loc, area,day,hour,mode,toArea):
     now = datetime.datetime.now()
     then = getNextDateTime(now,day,hour)
     depart=makeDeparture(then)
-    return getGrid(area, loc,density,depart,mode,toArea)
+    return getGrid(area, loc,depart,mode,toArea)
 
 def printGrid(grid):
     for row in grid:
@@ -233,10 +257,12 @@ def getAddress(lat,lon):
 def isPointInArea(area,lat,lon):
     data=getAddress(lat,lon)
     try:
-        if area.name.lower() in data['results'][0]['formatted_address'].lower():
-            return True
+        for addressComponent in data['results'][0]['address_components']:
+            if addressComponent['long_name']==area.longName:
+                return True
         return False
     except:
+        print data['results'],
         return False
 
 
@@ -247,7 +273,6 @@ if __name__ == '__main__':
     parser.add_argument('-area',default='london')
     parser.add_argument('-loc',default='home')
     parser.add_argument('-mode',default='transit')
-    parser.add_argument('-density',type=int,default='3')
     parser.add_argument('-toLocation',action='store_true',default=False)
 
 
@@ -258,9 +283,8 @@ if __name__ == '__main__':
     else:
         print "from %s to %s"%(args.loc, args.area)
     print "at %d:00 this %s"%(args.hour, args.day)
-    print "rendering a %dx%d grid"%(args.density, args.density)
    
-    grid=getGridAtTime(args.loc, args.area,args.day,args.hour,args.density,args.mode,not(args.toLocation))
+    grid=getGridAtTime(args.loc, args.area,args.day,args.hour,args.mode,not(args.toLocation))
     # printGrid(grid)
 
 

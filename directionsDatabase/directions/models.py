@@ -6,6 +6,7 @@ import math
 
 class Area(models.Model):
     name = models.CharField(max_length=200)    
+    longName = models.CharField(max_length=200, default="")    
     topLeftLat = models.FloatField(default=0)
     topLeftLong = models.FloatField(default=0)
     bottomRightLat = models.FloatField(default=0)
@@ -52,7 +53,7 @@ class PathGrid(models.Model):
     fromLocationToArea = models.BooleanField(default=True)
     mode = models.CharField(max_length=200)
 
-    density = models.IntegerField(default=0)
+    # density = models.IntegerField(default=0)
     
     def __unicode__(self):
         if self.fromLocationToArea:
