@@ -22,18 +22,22 @@ def map(request):
     # context = RequestContext(request, {
     #     'latest_question_list': latest_question_list,
     # })
-    
+    print request.path 
+    map_name=str(request.path.split("/")[2])
+    map_number=int(request.path.split("/")[3])-1
+
     area=Area.objects.filter(name="london")[0]
     lat,lon=area.getCenter()
 
-    grid=PathGrid.objects.filter()[len(PathGrid.objects.filter())-1]
+    grid=PathGrid.objects.filter()[map_number]
     print grid
     
     points=Path.objects.filter(pathGrid=grid)
     validPoints=[]
     for point in points:
-        if point.valid:
+        if point.locationInArea.valid:
             validPoints.append(point)
     context = {'latitude': str(lat),'longitude':str(lon),'points':validPoints}
 
-    return render(request, 'maps/map.html',context)
+    # return render(request, 'maps/map.html',context)
+    return render(request, 'maps/%s.html'%(map_name),context)

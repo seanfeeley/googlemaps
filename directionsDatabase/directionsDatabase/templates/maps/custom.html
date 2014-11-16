@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" conFIVEt="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script>
+var map;
+
+
+var MY_MAPTYPE_ID = 'custom_style';
+
+function initialize() {
+
+  var featureOpts = [
+    {
+      stylers: [
+        { hue: '#000000' },
+        { visibility: 'simplified' },
+        { gamma: 0.5 },
+        { weight: 0.5 }
+      ]
+    },
+    {
+      elementType: 'labels',
+      stylers: [
+        { visibility: 'on' }
+      ]
+    },
+    {
+      featureType: 'water',
+      stylers: [
+        { color: '#000000' }
+      ]
+    }
+  ];
+
+  var mapOptions = {
+    zoom: 12,
+    center: new google.maps.LatLng({{latitude}}, {{longitude}}),
+    mapTypeControlOptions: {
+      mapTypeIds: [google.maps.MapTypeId.ROADMAP, MY_MAPTYPE_ID]
+    },
+    mapTypeId: MY_MAPTYPE_ID
+  };
+
+  map = new google.maps.Map(document.getElementById('map-canvas'),
+      mapOptions);
+
+  var styledMapOptions = {
+    name: 'Custom Style'
+  };
+
+  var customMapType = new google.maps.StyledMapType(featureOpts, styledMapOptions);
+
+  map.mapTypes.set(MY_MAPTYPE_ID, customMapType);
+
+  // var mapOptions = {
+  //   zoom: 10,
+  //   center: new google.maps.LatLng({{latitude}}, {{longitude}})
+  // };
+ var FIVE_MINS_WALKING_Y=(51.602626-51.595441+0.0000715)/2
+ // var FIVE_MINS_WALKING_Y=0.00370625
+
+ var FIVE_MINS_WALKING_X=(-0.076213+0.087382+0.00012)/2
+ // var FIVE_MINS_WALKING_X=0.005712
+ 
+  // map = new google.maps.Map(document.getElementById('map-canvas'),
+  //     mapOptions);
+    {% if points %}
+
+    {% for point in points %}
+    colors= ["#00FF00", "#00F707", "#00EF0F", "#00E717", "#00E01E", "#00D826", "#00D02E", "#00C836", "#00C13D", "#00B945", "#00B14D", "#00AA55", "#00A25C", "#009A64", "#00926C", "#008B73", "#00837B", "#007B83", "#00738B", "#006C92", "#00649A", "#005CA2", "#0055AA", "#004DB1", "#0045B9", "#003DC1", "#0036C8", "#002ED0", "#0026D8", "#001EE0", "#0017E7", "#000FEF", "#0007F7", "#0000FF", "#0700F7", "#0F00EF", "#1700E7", "#1E00E0", "#2600D8", "#2E00D0", "#3600C8", "#3D00C1", "#4500B9", "#4D00B1", "#5500AA", "#5C00A2", "#64009A", "#6C0092", "#73008B", "#7B0083", "#83007B", "#8B0073", "#92006C", "#9A0064", "#A2005C", "#AA0055", "#B1004D", "#B90045", "#C1003D", "#C80036", "#D0002E", "#D80026", "#E0001E", "#E70017", "#EF000F", "#F70007", "#FF0000", "#F70000", "#EF0000", "#E70000", "#E00000", "#D80000", "#D00000", "#C80000", "#C10000", "#B90000", "#B10000", "#AA0000", "#A20000", "#9A0000", "#920000", "#8B0000", "#830000", "#7B0000", "#730000", "#6C0000", "#640000", "#5C0000", "#550000", "#4D0000", "#450000", "#3D0000", "#360000", "#2E0000", "#260000", "#1E0000", "#170000", "#0F0000", "#070000", "#000000"];
+    // colors=  ["ff0000"];
+    point_color=colors[Math.floor(colors.length*({{point.seconds}}/(3*60*60)))];
+    cityRectangle = new google.maps.Rectangle({
+      strokeColor: '#000000',
+      strokeOpacity: 0.8,
+      strokeWeight: 0.0,
+      fillColor: point_color,
+      fillOpacity: .5,
+      map: map,
+       bounds: new google.maps.LatLngBounds(
+      new google.maps.LatLng({{point.locationInArea.latitude}}-FIVE_MINS_WALKING_Y/2.0, {{point.locationInArea.longitude}}-FIVE_MINS_WALKING_X/2.0),
+      new google.maps.LatLng({{point.locationInArea.latitude}}+FIVE_MINS_WALKING_Y/2.0, {{point.locationInArea.longitude}}+FIVE_MINS_WALKING_X/2.0))
+
+    });
+        
+    {% endfor %}
+   
+    {% endif %}
+
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+  <body>
+    <div id="map-canvas"></div>
+  </body>
+</html>

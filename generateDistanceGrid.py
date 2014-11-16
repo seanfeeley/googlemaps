@@ -17,10 +17,12 @@ import math
 django.setup()
 
 TEN_MINS_WALKING_Y=51.602626-51.595441
+FIVE_MINS_WALKING_Y=TEN_MINS_WALKING_Y*0.5
 TWENTY_MINS_WALKING_Y=TEN_MINS_WALKING_Y*2
 FIFTEEN_MINS_WALKING_Y=TEN_MINS_WALKING_Y*1.5
 
 TEN_MINS_WALKING_X=-0.076213+0.087382
+FIVE_MINS_WALKING_X=TEN_MINS_WALKING_X*0.5
 TWENTY_MINS_WALKING_X=TEN_MINS_WALKING_X*2
 FIFTEEN_MINS_WALKING_X=TEN_MINS_WALKING_X*1.5
 
@@ -40,21 +42,17 @@ def unixTime(datetime):
     return int(time.mktime(datetime.timetuple()))
 
 def printLoadingBar(percentageX, percentageY,eta):
-    max=50
-    print "[",
+    max=50.0
+    printy= "["
 
-    for i in range(0,(max*percentageX)):
-        if float(i)/max<percentageY:
-            print 'I',
+    for i in range(0,int(max)):
+        if float(i)/int(max)<percentageY:
+            printy+='I'
         else:
-            print '-',
-    print "O"
-    for i in range(0,(max*(1-percentageX))):
-        if float(i)/max<percentageY:
-            print 'I',
-        else:
-            print '-',
-    print "]",eta,
+            printy+='-'
+
+    printy+="]"
+    print printy[0:1+int(max*(percentageX))]+"O"+printy[1+int(max*(percentageX)):len(printy)]+eta,
 
 def loadFromJson(path):
     json_data=open(path)
@@ -64,9 +62,12 @@ def loadFromJson(path):
 def makeLocationInArea(loc,area):
     locs=LocationInArea.objects.filter(area=area,latitude=loc[0],longitude=loc[1])
     if len(locs)==1:
+        print "Already been here.",
         return locs[0]
     elif len(locs)==0:
-        loc= LocationInArea(area=area,latitude=loc[0],longitude=loc[1])
+        print "New loc.",
+        inArea=isPointInArea(area,loc[0],loc[1])
+        loc= LocationInArea(area=area,latitude=loc[0],longitude=loc[1],valid=inArea)
         loc.save()
         return loc
 
@@ -103,17 +104,21 @@ def makeDeparture(time):
     return depart
 
 def makePath(pathGrid,locationInArea,seconds,delay):
+
     paths=Path.objects.filter(pathGrid=pathGrid,locationInArea=locationInArea)
     if len(paths)==1:
         path=paths[0]
         path.seconds=seconds
         path.delay=delay
         path.save()
+        print "New path, %s seconds long."%str(path.seconds),
+
         return path
 
     elif len(paths)==0:
         path= Path(pathGrid=pathGrid,locationInArea=locationInArea,seconds=seconds,delay=delay)
         path.save()
+        print "Update path, %s seconds long."%str(path.seconds),
         return path
 
 
@@ -131,7 +136,7 @@ def makePathGrid(location,area,fromLocationToArea,departure,mode):
 
 def secondsToGetTo(pathGrid,loc):
     # return 999999,0
-    time.sleep(2)
+    time.sleep(1)
     seconds=-1
 
     if pathGrid.fromLocationToArea:
@@ -152,7 +157,6 @@ def secondsToGetTo(pathGrid,loc):
     routes=data['routes']
     
     try:
-
         seconds=data['routes'][0]['legs'][0]['duration']['value']
         departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
         delay=departure_time - unix_time
@@ -180,8 +184,8 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
     grid=[]
     time_marker=time.time()
 
-    yGridDensity=int(math.fabs(height)/TEN_MINS_WALKING_Y)
-    xGridDensity=int(math.fabs(width)/TEN_MINS_WALKING_X)
+    yGridDensity=int(math.fabs(height)/FIVE_MINS_WALKING_Y)
+    xGridDensity=int(math.fabs(width)/FIVE_MINS_WALKING_X)
 
 
     for y in range(0,yGridDensity):
@@ -192,30 +196,55 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
             eta=eta*((xGridDensity*yGridDensity)-(1+(y*yGridDensity)+x))
             if eta>(60*60):
                 mins=eta/60
-                hours=mins%60
-                remainingMins=mins-(60*hours)
-                etaString="%d hours, %d mins to go. "%(hours,remainingMins)
+                remainingMins=mins%60
+                hours=(mins-remainingMins)/60
+                etaString="%d hours, %d mins to go (%d). "%(hours,remainingMins,mins)
             elif eta>(60):
                 etaString="%d mins to go. "%(eta/60)
             else:
                 etaString="%d seconds to go. "%(eta)
-            printLoadingBar(float((y*yGridDensity)+x)/float(yGridDensity*xGridDensity),etaString)
+            printLoadingBar(float(x)/float(xGridDensity),float(y)/float(yGridDensity),etaString)
 
             time_marker=time.time()
             loc=[area.topLeftLat-y*(height/(yGridDensity-1)),area.topLeftLong+x*(width/(xGridDensity-1))]
             
-            if isPointInArea(area,loc[0],loc[1]):
-                loc=makeLocationInArea(loc,area)
-                if not loadPath(pathGrid,loc):
+           
+
+            loc=makeLocationInArea(loc,area)
+            if loc.valid: print "Its valid.",
+            else: print "Its not valid.",
+            path=loadPath(pathGrid,loc)
+            if not path:
+                
+                
+                if loc.valid:
+
                     seconds,delay=secondsToGetTo(pathGrid,loc)
-                    makePath(pathGrid,loc,seconds,delay)
+                   
                 else:
-                    seconds = -1
+                    
+                    seconds=0
                     delay=0
-                grid[y].append({'loc':loc,'seconds':seconds+delay})
-                print "."
+                makePath(pathGrid,loc,seconds,delay)
             else:
-                print "Not in the area."
+               
+
+                # if not loc.valid:
+                #     if str(loc.latitude) in ["51.3946268545","51.3872142","51.3798015455","51.3723888909","51.3575635818"] and str(loc.longitude) in ["-0.30183942029", "-0.0162347101449","-0.278991043478","0.0865829855072","-0.119052405797"]:
+
+                #         inArea=isPointInArea(area,loc.latitude,loc.longitude)
+                #         if inArea:
+                #             loc.valid=True
+                #             loc.save()
+                #             seconds,delay=secondsToGetTo(pathGrid,loc)
+                #             makePath(pathGrid,loc,seconds,delay)
+                         
+                    
+                seconds = -1
+                delay=0
+            grid[y].append({'loc':loc,'seconds':seconds+delay})
+            print "."
+            
 
 
     return grid
@@ -255,15 +284,22 @@ def getAddress(lat,lon):
     return data
 
 def isPointInArea(area,lat,lon):
+
+    time.sleep(.3)
     data=getAddress(lat,lon)
-    try:
-        for addressComponent in data['results'][0]['address_components']:
-            if addressComponent['long_name']==area.longName:
-                return True
+    if not data.get('error_message'):
+        for address_components in data['results']:
+            for addressComponent in address_components['address_components']:
+                if addressComponent['long_name']==area.longName:
+                    return True
         return False
-    except:
-        print data['results'],
-        return False
+    else:
+
+        # if data.get('error_message'):
+        print "No results", data.get('error_message')
+        sys.exit()
+        # print data['results'],
+        # return False
 
 
 if __name__ == '__main__':

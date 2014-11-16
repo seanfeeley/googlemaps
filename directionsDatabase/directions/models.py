@@ -22,6 +22,9 @@ class LocationInArea(models.Model):
     latitude = models.FloatField(default=0)
     longitude = models.FloatField(default=0)
     area = models.ForeignKey(Area)
+
+    valid=models.BooleanField(default=True)
+
     def __unicode__(self):
         lat=abs(self.area.topLeftLat-self.area.bottomRightLat)
         lon=abs(self.area.bottomRightLong-self.area.topLeftLong)
@@ -69,7 +72,6 @@ class Path(models.Model):
 
     locationInArea = models.ForeignKey(LocationInArea)
 
-    valid=models.BooleanField(default=True)
    
     seconds = models.IntegerField(default=0)
     delay = models.IntegerField(default=0)

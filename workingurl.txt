@@ -5,3 +5,8 @@ https://maps.googleapis.com/maps/api/directions/json?origin=Toronto&destination=
 https://maps.googleapis.com/maps/api/directions/json?origin=51.444848/-0.127986&destination=51.517005/-0.140360&key=AIzaSyCewGtfayH4MKxjtHpqJjpol8Q2dcKCDW8&&departure_time=1343641500&mode=transit
 
 51.644848,0.07201400000000002
+
+
+http://www.strangeplanet.fr/work/gradient-generator/?c=100:00FF00:FF5E00:0000FF:FFFF00:FF00FF:00FFFF:8C0000
+
+http://maps.googleapis.com/maps/api/geocode/json?latlng=51.3575635818,-0.119052405797&sensor=true
