@@ -20,31 +20,86 @@ var MY_MAPTYPE_ID = 'custom_style';
 
 function initialize() {
 
-  var featureOpts = [
-    {
-      stylers: [
-        { hue: '#000000' },
-        { visibility: 'simplified' },
-        { gamma: 0.5 },
-        { weight: 0.5 }
-      ]
-    },
-    {
-      elementType: 'labels',
-      stylers: [
-        { visibility: 'on' }
-      ]
-    },
-    {
-      featureType: 'water',
-      stylers: [
-        { color: '#000000' }
-      ]
-    }
-  ];
+
+
+  var featureOpts =    [
+  {
+    featureType: 'water',
+    elementType: 'all',
+    stylers: [
+      { hue: '#0055bb' },
+      { saturation: 100 },
+      { lightness: -30 },
+      { visibility: 'on' }
+    ]
+  },{
+    featureType: 'landscape',
+    elementType: 'geometry',
+    stylers: [
+      { hue: '#ffffff' },
+      { saturation: -100 },
+      { lightness: 100 },
+      { visibility: 'simplified' }
+    ]
+  },{
+    featureType: 'road.highway',
+    elementType: 'all',
+    stylers: [
+      { hue: '#bbbbbb' },
+      { saturation: -100 },
+      { lightness: 26 },
+      { visibility: 'on' }
+    ]
+  },{
+    featureType: 'road.local',
+    elementType: 'all',
+    stylers: [
+      { hue: '#999999' },
+      { saturation: -100 },
+      { lightness: -40 },
+      { visibility: 'on' }
+    ]
+  },{
+    featureType: 'poi',
+    elementType: 'all',
+    stylers: [
+      { hue: '#ffffff' },
+      { saturation: -100 },
+      { lightness: 100 },
+      { visibility: 'off' }
+    ]
+  },{
+    featureType: 'administrative.locality',
+    elementType: 'all',
+    stylers: [
+      { hue: '#000000' },
+      { saturation: 0 },
+      { lightness: 0 },
+      { visibility: 'simplified' }
+    ]
+  },{
+    featureType: 'road.local',
+    elementType: 'all',
+    stylers: [
+      { hue: '#000000' },
+      { saturation: -100 },
+      { lightness: -100 },
+      { visibility: 'off' }
+    ]
+  },{
+    featureType: 'road.highway',
+    elementType: 'labels',
+    stylers: [
+      { hue: '#000000' },
+      { saturation: -100 },
+      { lightness: -100 },
+      { visibility: 'off' }
+    ]
+  }
+];
 
   var mapOptions = {
-    zoom: 12,
+    zoom: 11,
     center: new google.maps.LatLng({{latitude}}, {{longitude}}),
     mapTypeControlOptions: {
       mapTypeIds: [google.maps.MapTypeId.ROADMAP, MY_MAPTYPE_ID]
@@ -78,15 +133,15 @@ function initialize() {
     {% if points %}
 
     {% for point in points %}
-    colors= ["#00FF00", "#00F707", "#00EF0F", "#00E717", "#00E01E", "#00D826", "#00D02E", "#00C836", "#00C13D", "#00B945", "#00B14D", "#00AA55", "#00A25C", "#009A64", "#00926C", "#008B73", "#00837B", "#007B83", "#00738B", "#006C92", "#00649A", "#005CA2", "#0055AA", "#004DB1", "#0045B9", "#003DC1", "#0036C8", "#002ED0", "#0026D8", "#001EE0", "#0017E7", "#000FEF", "#0007F7", "#0000FF", "#0700F7", "#0F00EF", "#1700E7", "#1E00E0", "#2600D8", "#2E00D0", "#3600C8", "#3D00C1", "#4500B9", "#4D00B1", "#5500AA", "#5C00A2", "#64009A", "#6C0092", "#73008B", "#7B0083", "#83007B", "#8B0073", "#92006C", "#9A0064", "#A2005C", "#AA0055", "#B1004D", "#B90045", "#C1003D", "#C80036", "#D0002E", "#D80026", "#E0001E", "#E70017", "#EF000F", "#F70007", "#FF0000", "#F70000", "#EF0000", "#E70000", "#E00000", "#D80000", "#D00000", "#C80000", "#C10000", "#B90000", "#B10000", "#AA0000", "#A20000", "#9A0000", "#920000", "#8B0000", "#830000", "#7B0000", "#730000", "#6C0000", "#640000", "#5C0000", "#550000", "#4D0000", "#450000", "#3D0000", "#360000", "#2E0000", "#260000", "#1E0000", "#170000", "#0F0000", "#070000", "#000000"];
+    colors= ["#00FF00", "#00FF03", "#00FF06", "#00FF09", "#00FF0C", "#00FF0F", "#00FF12", "#00FF15", "#00FF18", "#00FF1B", "#00FF1E", "#00FF21", "#00FF24", "#00FF27", "#00FF2A", "#00FF2D", "#00FF30", "#00FF33", "#00FF36", "#00FF39", "#00FF3C", "#00FF3F", "#00FF42", "#00FF45", "#00FF48", "#00FF4B", "#00FF4E", "#00FF51", "#00FF55", "#00FF58", "#00FF5B", "#00FF5E", "#00FF61", "#00FF64", "#00FF67", "#00FF6A", "#00FF6D", "#00FF70", "#00FF73", "#00FF76", "#00FF79", "#00FF7C", "#00FF7F", "#00FF82", "#00FF85", "#00FF88", "#00FF8B", "#00FF8E", "#00FF91", "#00FF94", "#00FF97", "#00FF9A", "#00FF9D", "#00FFA0", "#00FFA3", "#00FFA6", "#00FFAA", "#00FFAD", "#00FFB0", "#00FFB3", "#00FFB6", "#00FFB9", "#00FFBC", "#00FFBF", "#00FFC2", "#00FFC5", "#00FFC8", "#00FFCB", "#00FFCE", "#00FFD1", "#00FFD4", "#00FFD7", "#00FFDA", "#00FFDD", "#00FFE0", "#00FFE3", "#00FFE6", "#00FFE9", "#00FFEC", "#00FFEF", "#00FFF2", "#00FFF5", "#00FFF8", "#00FFFB", "#00FFFF", "#00FBFF", "#00F8FF", "#00F5FF", "#00F2FF", "#00EFFF", "#00ECFF", "#00E9FF", "#00E6FF", "#00E3FF", "#00E0FF", "#00DDFF", "#00DAFF", "#00D7FF", "#00D3FF", "#00D0FF", "#00CDFF", "#00CAFF", "#00C7FF", "#00C4FF", "#00C1FF", "#00BEFF", "#00BBFF", "#00B8FF", "#00B5FF", "#00B2FF", "#00AFFF", "#00ACFF", "#00A8FF", "#00A5FF", "#00A2FF", "#009FFF", "#009CFF", "#0099FF", "#0096FF", "#0093FF", "#0090FF", "#008DFF", "#008AFF", "#0087FF", "#0084FF", "#0081FF", "#007DFF", "#007AFF", "#0077FF", "#0074FF", "#0071FF", "#006EFF", "#006BFF", "#0068FF", "#0065FF", "#0062FF", "#005FFF", "#005CFF", "#0059FF", "#0056FF", "#0052FF", "#004FFF", "#004CFF", "#0049FF", "#0046FF", "#0043FF", "#0040FF", "#003DFF", "#003AFF", "#0037FF", "#0034FF", "#0031FF", "#002EFF", "#002BFF", "#0027FF", "#0024FF", "#0021FF", "#001EFF", "#001BFF", "#0018FF", "#0015FF", "#0012FF", "#000FFF", "#000CFF", "#0009FF", "#0006FF", "#0003FF", "#0000FF", "#0300FF", "#0600FF", "#0900FF", "#0C00FF", "#0F00FF", "#1200FF", "#1500FF", "#1800FF", "#1B00FF", "#1E00FF", "#2100FF", "#2400FF", "#2700FF", "#2B00FF", "#2E00FF", "#3100FF", "#3400FF", "#3700FF", "#3A00FF", "#3D00FF", "#4000FF", "#4300FF", "#4600FF", "#4900FF", "#4C00FF", "#4F00FF", "#5200FF", "#5600FF", "#5900FF", "#5C00FF", "#5F00FF", "#6200FF", "#6500FF", "#6800FF", "#6B00FF", "#6E00FF", "#7100FF", "#7400FF", "#7700FF", "#7A00FF", "#7D00FF", "#8100FF", "#8400FF", "#8700FF", "#8A00FF", "#8D00FF", "#9000FF", "#9300FF", "#9600FF", "#9900FF", "#9C00FF", "#9F00FF", "#A200FF", "#A500FF", "#A800FF", "#AC00FF", "#AF00FF", "#B200FF", "#B500FF", "#B800FF", "#BB00FF", "#BE00FF", "#C100FF", "#C400FF", "#C700FF", "#CA00FF", "#CD00FF", "#D000FF", "#D300FF", "#D700FF", "#DA00FF", "#DD00FF", "#E000FF", "#E300FF", "#E600FF", "#E900FF", "#EC00FF", "#EF00FF", "#F200FF", "#F500FF", "#F800FF", "#FB00FF", "#FF00FF", "#FF03FB", "#FF06F8", "#FF09F5", "#FF0CF2", "#FF0FEF", "#FF12EC", "#FF15E9", "#FF18E6", "#FF1BE3", "#FF1EE0", "#FF21DD", "#FF24DA", "#FF27D7", "#FF2BD3", "#FF2ED0", "#FF31CD", "#FF34CA", "#FF37C7", "#FF3AC4", "#FF3DC1", "#FF40BE", "#FF43BB", "#FF46B8", "#FF49B5", "#FF4CB2", "#FF4FAF", "#FF52AC", "#FF56A8", "#FF59A5", "#FF5CA2", "#FF5F9F", "#FF629C", "#FF6599", "#FF6896", "#FF6B93", "#FF6E90", "#FF718D", "#FF748A", "#FF7787", "#FF7A84", "#FF7D81", "#FF817D", "#FF847A", "#FF8777", "#FF8A74", "#FF8D71", "#FF906E", "#FF936B", "#FF9668", "#FF9965", "#FF9C62", "#FF9F5F", "#FFA25C", "#FFA559", "#FFA856", "#FFAC52", "#FFAF4F", "#FFB24C", "#FFB549", "#FFB846", "#FFBB43", "#FFBE40", "#FFC13D", "#FFC43A", "#FFC737", "#FFCA34", "#FFCD31", "#FFD02E", "#FFD32B", "#FFD727", "#FFDA24", "#FFDD21", "#FFE01E", "#FFE31B", "#FFE618", "#FFE915", "#FFEC12", "#FFEF0F", "#FFF20C", "#FFF509", "#FFF806", "#FFFB03", "#FFFF00", "#FFFB00", "#FFF800", "#FFF500", "#FFF200", "#FFEF00", "#FFEC00", "#FFE900", "#FFE600", "#FFE300", "#FFE000", "#FFDD00", "#FFDA00", "#FFD700", "#FFD300", "#FFD000", "#FFCD00", "#FFCA00", "#FFC700", "#FFC400", "#FFC100", "#FFBE00", "#FFBB00", "#FFB800", "#FFB500", "#FFB200", "#FFAF00", "#FFAC00", "#FFA800", "#FFA500", "#FFA200", "#FF9F00", "#FF9C00", "#FF9900", "#FF9600", "#FF9300", "#FF9000", "#FF8D00", "#FF8A00", "#FF8700", "#FF8400", "#FF8100", "#FF7D00", "#FF7A00", "#FF7700", "#FF7400", "#FF7100", "#FF6E00", "#FF6B00", "#FF6800", "#FF6500", "#FF6200", "#FF5F00", "#FF5C00", "#FF5900", "#FF5600", "#FF5200", "#FF4F00", "#FF4C00", "#FF4900", "#FF4600", "#FF4300", "#FF4000", "#FF3D00", "#FF3A00", "#FF3700", "#FF3400", "#FF3100", "#FF2E00", "#FF2B00", "#FF2700", "#FF2400", "#FF2100", "#FF1E00", "#FF1B00", "#FF1800", "#FF1500", "#FF1200", "#FF0F00", "#FF0C00", "#FF0900", "#FF0600", "#FF0300", "#FF0000", "#FB0000", "#F80000", "#F50000", "#F20000", "#EF0000", "#EC0000", "#E90000", "#E60000", "#E30000", "#E00000", "#DD0000", "#DA0000", "#D70000", "#D30000", "#D00000", "#CD0000", "#CA0000", "#C70000", "#C40000", "#C10000", "#BE0000", "#BB0000", "#B80000", "#B50000", "#B20000", "#AF0000", "#AC0000", "#A80000", "#A50000", "#A20000", "#9F0000", "#9C0000", "#990000", "#960000", "#930000", "#900000", "#8D0000", "#8A0000", "#870000", "#840000", "#810000", "#7D0000", "#7A0000", "#770000", "#740000", "#710000", "#6E0000", "#6B0000", "#680000", "#650000", "#620000", "#5F0000", "#5C0000", "#590000", "#560000", "#520000", "#4F0000", "#4C0000", "#490000", "#460000", "#430000", "#400000", "#3D0000", "#3A0000", "#370000", "#340000", "#310000", "#2E0000", "#2B0000", "#270000", "#240000", "#210000", "#1E0000", "#1B0000", "#180000", "#150000", "#120000", "#0F0000", "#0C0000", "#090000", "#060000", "#030000", "#000000"];
     // colors=  ["ff0000"];
     point_color=colors[Math.floor(colors.length*({{point.seconds}}/(3*60*60)))];
     cityRectangle = new google.maps.Rectangle({
       strokeColor: '#000000',
-      strokeOpacity: 0.8,
+      strokeOpacity: 0.9,
       strokeWeight: 0.0,
       fillColor: point_color,
-      fillOpacity: .5,
+      fillOpacity: 1.0,
       map: map,
        bounds: new google.maps.LatLngBounds(
       new google.maps.LatLng({{point.locationInArea.latitude}}-FIVE_MINS_WALKING_Y/2.0, {{point.locationInArea.longitude}}-FIVE_MINS_WALKING_X/2.0),
