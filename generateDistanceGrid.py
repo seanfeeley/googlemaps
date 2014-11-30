@@ -111,14 +111,14 @@ def makePath(pathGrid,locationInArea,seconds,delay):
         path.seconds=seconds
         path.delay=delay
         path.save()
-        print "New path, %s seconds long."%str(path.seconds),
+        print "Update path, %s seconds long."%str(path.seconds),
 
         return path
 
     elif len(paths)==0:
         path= Path(pathGrid=pathGrid,locationInArea=locationInArea,seconds=seconds,delay=delay)
         path.save()
-        print "Update path, %s seconds long."%str(path.seconds),
+        print "New path, %s seconds long."%str(path.seconds),
         return path
 
 
@@ -158,8 +158,11 @@ def secondsToGetTo(pathGrid,loc):
     
     try:
         seconds=data['routes'][0]['legs'][0]['duration']['value']
-        departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
-        delay=departure_time - unix_time
+        if pathGrid.mode=='transit':
+            departure_time=data['routes'][0]['legs'][0]['departure_time']['value']
+            delay=departure_time - unix_time
+        else:
+            delay=0
         return seconds,delay
     except Exception, e:
         if data.get('status') and data.get('status')=='OVER_QUERY_LIMIT':
@@ -187,7 +190,8 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
     yGridDensity=int(math.fabs(height)/FIVE_MINS_WALKING_Y)
     xGridDensity=int(math.fabs(width)/FIVE_MINS_WALKING_X)
 
-
+    previousLoc=None
+    previousPath=None
     for y in range(0,yGridDensity):
         grid.append([])
         for x in range(0,xGridDensity):
@@ -212,9 +216,21 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
 
             loc=makeLocationInArea(loc,area)
             if loc.valid: print "Its valid.",
-            else: print "Its not valid.",
+            else: 
+                # if previousLoc and previousLoc.valid:
+                #     inArea=isPointInArea(area,loc.latitude,loc.longitude)
+                #     if inArea:
+                #         loc.valid=True
+                #         loc.save()
+                #         print "Changed our mind, its valid"
+                #     else:
+                #        print "Its still not valid.",
+                # else:
+                print "Its not valid.",
+            previousLoc=loc
+
             path=loadPath(pathGrid,loc)
-            if not path:
+            if not path or path.seconds==0:
                 
                 
                 if loc.valid:
@@ -227,7 +243,7 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
                     delay=0
                 makePath(pathGrid,loc,seconds,delay)
             else:
-               
+
 
                 # if not loc.valid:
                 #     if str(loc.latitude) in ["51.3946268545","51.3872142","51.3798015455","51.3723888909","51.3575635818"] and str(loc.longitude) in ["-0.30183942029", "-0.0162347101449","-0.278991043478","0.0865829855072","-0.119052405797"]:
@@ -242,6 +258,15 @@ def getGrid(area, place,depart,mode,fromLocationToArea):
                     
                 seconds = -1
                 delay=0
+
+
+            # if previousLoc.valid and previousPath and path:
+            #     if previousPath.second-path.seconds>(20*60):
+            #         seconds,delay=secondsToGetTo(pathGrid,loc):
+
+
+
+
             grid[y].append({'loc':loc,'seconds':seconds+delay})
             print "."
             
@@ -319,7 +344,7 @@ if __name__ == '__main__':
     else:
         print "from %s to %s"%(args.loc, args.area)
     print "at %d:00 this %s"%(args.hour, args.day)
-   
+    
     grid=getGridAtTime(args.loc, args.area,args.day,args.hour,args.mode,not(args.toLocation))
     # printGrid(grid)
 

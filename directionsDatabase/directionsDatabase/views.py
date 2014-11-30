@@ -25,18 +25,27 @@ def map(request):
     print request.path 
     map_name=str(request.path.split("/")[2])
     map_number=int(request.path.split("/")[3])-1
-
     area=Area.objects.filter(name="london")[0]
     lat,lon=area.getCenter()
-
-    grid=PathGrid.objects.filter()[map_number]
-    print grid
-    
-    points=Path.objects.filter(pathGrid=grid)
     validPoints=[]
-    for point in points:
-        if point.locationInArea.valid:
-            validPoints.append(point)
+
+    if map_number!=-1:
+
+        grid=PathGrid.objects.filter()[map_number]
+        print grid
+        
+        points=Path.objects.filter(pathGrid=grid)
+        # threePoints=[]
+
+        for point in points:
+            # threePoints.append(point)
+            # threePoints=threePoints[-3:]
+            # if len(threePoints)==3:
+            #     if threePoints[0].locationInArea.valid and not threePoints[1].locationInArea.valid and threePoints[2].locationInArea.valid:
+            #         print threePoints[1].locationInArea.latitude,threePoints[1].locationInArea.longitude,threePoints[1]
+            if point.locationInArea.valid:
+                point.seconds=point.seconds+1
+                validPoints.append(point)
     context = {'latitude': str(lat),'longitude':str(lon),'points':validPoints}
 
     # return render(request, 'maps/map.html',context)
