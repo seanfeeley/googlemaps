@@ -11,6 +11,7 @@ class Area(models.Model):
     topLeftLong = models.FloatField(default=0)
     bottomRightLat = models.FloatField(default=0)
     bottomRightLong = models.FloatField(default=0)
+    mapped=models.BooleanField(default=False)
     def getCenter(self):
         return ((self.topLeftLat-self.bottomRightLat)/2+self.bottomRightLat,(self.topLeftLong-self.bottomRightLong)/2+self.bottomRightLong)
 
@@ -55,6 +56,7 @@ class PathGrid(models.Model):
 
     fromLocationToArea = models.BooleanField(default=True)
     mode = models.CharField(max_length=200)
+    
 
     # density = models.IntegerField(default=0)
     
